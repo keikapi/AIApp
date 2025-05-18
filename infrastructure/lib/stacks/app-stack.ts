@@ -4,6 +4,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 import { BaseStack } from './base-stack';
 import { StorageStack } from './storage-stack';
@@ -133,8 +134,14 @@ export class AppStack extends cdk.Stack {
           USER_SETTINGS_TABLE: props.storageStack.userSettingsTable.tableName,
           CHAT_HISTORY_TABLE: props.storageStack.chatHistoryTable.tableName,
           OPENSEARCH_ENDPOINT: props.aiSearchStack.collection.attrCollectionEndpoint,
+          NODE_ENV: 'production',
         },
         containerPort: 3000,
+        enableLogging: true,
+        logDriver: ecs.LogDrivers.awsLogs({
+          streamPrefix: 'ai-chatbot',
+          logRetention: logs.RetentionDays.ONE_WEEK,
+        }),
       },
       desiredCount: 1,
       cpu: 512,
@@ -142,18 +149,50 @@ export class AppStack extends cdk.Stack {
       publicLoadBalancer: true,
       assignPublicIp: true,
       securityGroups: [this.serviceSecurityGroup],
-      minHealthyPercent: 0,
-      maxHealthyPercent: 100,
+      minHealthyPercent: 50,
+      maxHealthyPercent: 200,
+      circuitBreaker: { rollback: true },
+      deploymentController: {
+        type: ecs.DeploymentControllerType.ECS,
+      },
+      capacityProviderStrategies: [
+        {
+          capacityProvider: 'FARGATE',
+          weight: 1,
+        },
+        {
+          capacityProvider: 'FARGATE_SPOT',
+          weight: 1,
+        },
+      ],
     });
 
     // ヘルスチェックの設定
     this.service.targetGroup.configureHealthCheck({
       path: '/',
       healthyHttpCodes: '200,302',
-      interval: cdk.Duration.seconds(10),
+      interval: cdk.Duration.seconds(30),
       timeout: cdk.Duration.seconds(5),
       healthyThresholdCount: 2,
-      unhealthyThresholdCount: 2,
+      unhealthyThresholdCount: 3,
+    });
+
+    // オートスケーリングの設定
+    const scaling = this.service.service.autoScaleTaskCount({
+      minCapacity: 1,
+      maxCapacity: 3,
+    });
+
+    scaling.scaleOnCpuUtilization('CpuScaling', {
+      targetUtilizationPercent: 70,
+      scaleInCooldown: cdk.Duration.seconds(60),
+      scaleOutCooldown: cdk.Duration.seconds(60),
+    });
+
+    scaling.scaleOnMemoryUtilization('MemoryScaling', {
+      targetUtilizationPercent: 70,
+      scaleInCooldown: cdk.Duration.seconds(60),
+      scaleOutCooldown: cdk.Duration.seconds(60),
     });
 
     // タグ付け
