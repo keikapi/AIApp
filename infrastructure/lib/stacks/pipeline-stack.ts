@@ -73,7 +73,7 @@ export class PipelineStack extends cdk.Stack {
           post_build: {
             commands: [
               'cd ..',
-              './scripts/push-image.ps1',
+              './scripts/push-image.sh',
             ],
           },
         },
