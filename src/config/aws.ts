@@ -6,7 +6,7 @@ import { TextractClient } from '@aws-sdk/client-textract';
 
 // AWS設定
 export const awsConfig = {
-  region: process.env.AWS_REGION || 'ap-east-1',
+  region: process.env.AWS_REGION || 'us-east-1',
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',

@@ -1,4 +1,4 @@
-import { OpenSearchServerlessClient, CreateCollectionCommand, CreateSecurityPolicyCommand, CreateSecurityConfigCommand } from '@aws-sdk/client-opensearch-serverless';
+import { OpenSearchServerlessClient, CreateCollectionCommand, CreateSecurityPolicyCommand, CreateSecurityConfigCommand } from '@aws-sdk/client-opensearchserverless';
 import { awsConfig } from '../src/config/aws';
 
 async function setupOpenSearchServerless() {

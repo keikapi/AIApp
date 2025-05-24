@@ -38,8 +38,13 @@ aws secretsmanager create-secret \
 
 1. 依存関係のインストール
 ```powershell
-cd infrastructure
+# ルートディレクトリ
 npm install
+
+# Lambda関数（OpenSearch Serverlessを使う場合）
+cd infrastructure/lambda/document-processor
+npm install
+cd ../../../
 ```
 
 2. CDKブートストラップ
@@ -158,4 +163,17 @@ cdk destroy --all
 4. ECRリポジトリの削除
 ```powershell
 aws ecr delete-repository --repository-name ai-chatbot --force
-``` 
+```
+
+## よくあるエラーと対策
+
+- **npm install時に @aws-sdk/client-opensearchserverless が見つからない**
+  - パッケージ名が正しいか確認してください（`@aws-sdk/client-opensearchserverless`）。
+  - ルートとLambdaディレクトリ両方で`npm install`を実行してください。
+- **CDKデプロイ時にOpenSearch Serverless関連でエラー**
+  - `aws-cdk-lib`や`@aws-cdk/aws-opensearchserverless`のバージョンが古い場合、最新にアップデートしてください。
+  - 例: `npm install aws-cdk-lib@latest @aws-cdk/aws-opensearchserverless@latest`
+
+## 参考リンク
+- [AWS CDK公式ドキュメント（aws-cdk-lib）](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib-readme.html)
+- [OpenSearchServerlessClient (AWS SDK v3)](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/opensearchserverless/) 

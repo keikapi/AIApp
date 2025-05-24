@@ -19,7 +19,7 @@ interface AppStackProps extends cdk.StackProps {
 }
 
 export class AppStack extends cdk.Stack {
-  public readonly repository: ecr.Repository;
+  public readonly repository: ecr.IRepository;
   public readonly service: ecs_patterns.ApplicationLoadBalancedFargateService;
   private readonly serviceSecurityGroup: ec2.SecurityGroup;
 
@@ -46,10 +46,7 @@ export class AppStack extends cdk.Stack {
     );
 
     // ECRリポジトリの作成
-    this.repository = new ecr.Repository(this, 'Repository', {
-      repositoryName: 'ai-chatbot',
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
+    this.repository = ecr.Repository.fromRepositoryName(this, 'Repository', 'ai-chatbot-app');
 
     // ECSクラスターの作成
     const cluster = new ecs.Cluster(this, 'Cluster', {
@@ -144,14 +141,14 @@ export class AppStack extends cdk.Stack {
         }),
       },
       desiredCount: 1,
-      cpu: 512,
-      memoryLimitMiB: 1024,
+      cpu: 1024,
+      memoryLimitMiB: 2048,
       publicLoadBalancer: true,
       assignPublicIp: true,
       securityGroups: [this.serviceSecurityGroup],
-      minHealthyPercent: 50,
-      maxHealthyPercent: 200,
-      circuitBreaker: { rollback: true },
+      minHealthyPercent: 0,
+      maxHealthyPercent: 100,
+      circuitBreaker: { rollback: false },
       deploymentController: {
         type: ecs.DeploymentControllerType.ECS,
       },
@@ -160,39 +157,42 @@ export class AppStack extends cdk.Stack {
           capacityProvider: 'FARGATE',
           weight: 1,
         },
-        {
-          capacityProvider: 'FARGATE_SPOT',
-          weight: 1,
-        },
       ],
+      healthCheckGracePeriod: cdk.Duration.seconds(300),
     });
 
-    // ヘルスチェックの設定
+    // ヘルスチェックの設定を調整
     this.service.targetGroup.configureHealthCheck({
       path: '/',
       healthyHttpCodes: '200,302',
-      interval: cdk.Duration.seconds(30),
-      timeout: cdk.Duration.seconds(5),
+      interval: cdk.Duration.seconds(60),
+      timeout: cdk.Duration.seconds(30),
       healthyThresholdCount: 2,
-      unhealthyThresholdCount: 3,
+      unhealthyThresholdCount: 5,
     });
 
-    // オートスケーリングの設定
+    // ターゲットグループの設定を明示的に指定
+    const targetGroup = this.service.targetGroup;
+    targetGroup.setAttribute('deregistration_delay.timeout_seconds', '60');
+    targetGroup.setAttribute('slow_start.duration_seconds', '60');
+    targetGroup.setAttribute('stickiness.enabled', 'false');
+
+    // オートスケーリングの設定を調整
     const scaling = this.service.service.autoScaleTaskCount({
       minCapacity: 1,
-      maxCapacity: 3,
+      maxCapacity: 2,
     });
 
     scaling.scaleOnCpuUtilization('CpuScaling', {
       targetUtilizationPercent: 70,
-      scaleInCooldown: cdk.Duration.seconds(60),
-      scaleOutCooldown: cdk.Duration.seconds(60),
+      scaleInCooldown: cdk.Duration.seconds(300),
+      scaleOutCooldown: cdk.Duration.seconds(300),
     });
 
     scaling.scaleOnMemoryUtilization('MemoryScaling', {
       targetUtilizationPercent: 70,
-      scaleInCooldown: cdk.Duration.seconds(60),
-      scaleOutCooldown: cdk.Duration.seconds(60),
+      scaleInCooldown: cdk.Duration.seconds(300),
+      scaleOutCooldown: cdk.Duration.seconds(300),
     });
 
     // タグ付け

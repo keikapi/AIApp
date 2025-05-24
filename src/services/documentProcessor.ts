@@ -33,7 +33,9 @@ export class DocumentProcessor {
       contentType,
       size: file.length,
       uploadDate: new Date(),
-      metadata: {},
+      metadata: {
+        uploadedBy: '', // TODO: 呼び出し元でユーザーIDを渡す場合はここにセット
+      },
     };
 
     // Lambda関数を呼び出してドキュメント処理を開始

@@ -8,6 +8,33 @@ import { Construct } from 'constructs';
 interface PipelineStackProps extends cdk.StackProps {
   appStack: cdk.Stack;
 }
+// AWS SDKのバージョンを固定するためのpackage.jsonの依存関係を定義
+const packageJson = {
+  dependencies: {
+    "@aws-sdk/client-opensearchserverless": "^3.812.0",
+    // その他の依存関係も必要に応じて追加
+  }
+};
+
+// CodeBuildプロジェクトのbuildSpecを更新
+const buildSpec = codebuild.BuildSpec.fromObject({
+  version: '0.2',
+  phases: {
+    install: {
+      'runtime-versions': {
+        nodejs: '18',
+      },
+      commands: [
+        'npm install -g aws-cdk',
+        // package.jsonを生成してからnpm installを実行
+        `echo '${JSON.stringify(packageJson, null, 2)}' > package.json`,
+        'npm install',
+        'npm install --package-lock-only', // package-lock.jsonを更新
+      ],
+    },
+    // ... 他のフェーズは変更なし
+  }
+});
 
 export class PipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: PipelineStackProps) {
@@ -99,7 +126,7 @@ export class PipelineStack extends cdk.Stack {
     const sourceOutput = new codepipeline.Artifact();
     const sourceAction = new codepipeline_actions.GitHubSourceAction({
       actionName: 'Source',
-      owner: 'your-github-username', // GitHubのユーザー名または組織名
+      owner: 'keikapi', // GitHubのユーザー名または組織名
       repo: 'AIApp', // リポジトリ名
       branch: 'main',
       oauthToken: githubToken,

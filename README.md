@@ -47,10 +47,17 @@ AWSの各種AIサービスを利用したRAG（Retrieval-Augmented Generation）
 
 3. 依存関係のインストール
    ```powershell
+   # ルートディレクトリ
    npm install
-   cd infrastructure
+
+   # Lambda関数（OpenSearch Serverlessを使う場合）
+   cd infrastructure/lambda/document-processor
    npm install
+   cd ../../../
    ```
+
+   - **重要**: `@aws-sdk/client-opensearchserverless`のスペルミスに注意してください。
+   - 公式ドキュメント: [OpenSearchServerlessClient (AWS SDK v3)](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/opensearchserverless/)
 
 4. インフラストラクチャのデプロイ
    ```powershell
@@ -108,4 +115,22 @@ npm install
 - 機密情報（APIキー、トークンなど）は`.env`ファイルに保存し、Gitにコミットしないでください
 - `node_modules`ディレクトリは自動的に無視されます
 - コミット前に`git status`で変更内容を確認してください
+
+## 重要な依存パッケージ
+
+- `@aws-sdk/client-opensearchserverless` (OpenSearch Serverless用SDK)
+- `aws-cdk-lib/aws-opensearchserverless` (CDKでOpenSearch Serverlessリソース管理)
+
+## よくあるエラーと対策
+
+- **npm install時に @aws-sdk/client-opensearchserverless が見つからない**
+  - パッケージ名が正しいか確認してください（`@aws-sdk/client-opensearchserverless`）。
+  - ルートとLambdaディレクトリ両方で`npm install`を実行してください。
+- **CDKデプロイ時にOpenSearch Serverless関連でエラー**
+  - `aws-cdk-lib`や`@aws-cdk/aws-opensearchserverless`のバージョンが古い場合、最新にアップデートしてください。
+  - 例: `npm install aws-cdk-lib@latest @aws-cdk/aws-opensearchserverless@latest`
+
+## 参考リンク
+- [AWS CDK公式ドキュメント（aws-cdk-lib）](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib-readme.html)
+- [OpenSearchServerlessClient (AWS SDK v3)](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/client/opensearchserverless/)
 

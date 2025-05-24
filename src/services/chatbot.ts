@@ -24,7 +24,6 @@ export class Chatbot {
     this.opensearchClient = new Client({
       ...AwsSigv4Signer({
         region: awsConfig.region,
-        credentials: awsConfig.credentials,
       }),
       node: `https://${process.env.OPENSEARCH_ENDPOINT}`,
     });
@@ -79,7 +78,8 @@ export class Chatbot {
       },
     });
 
-    return response.hits.hits.map(hit => ({
+    const responseAny = response as any;
+    return responseAny.hits.hits.map((hit: any) => ({
       id: hit._id,
       score: hit._score,
       content: hit._source.content,

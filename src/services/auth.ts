@@ -76,7 +76,7 @@ export class AuthService {
     });
 
     const response = await this.cognitoClient.send(command);
-    const username = response.UsernameAttributes?.find(attr => attr.Name === 'preferred_username')?.Value || '';
+    const username = response.UserAttributes?.find(attr => attr.Name === 'preferred_username')?.Value || '';
 
     return {
       id: response.Username || '',
