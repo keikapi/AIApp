@@ -35,7 +35,20 @@ const buildSpec = codebuild.BuildSpec.fromObject({
         'npm install --package-lock-only', // package-lock.jsonを更新
       ],
     },
-    // ... 他のフェーズは変更なし
+    build: {
+      commands: [
+        'npm run build',
+        'npm install --prefix infrastructure',
+        'cdk deploy AIChatbotAppStack --require-approval never',
+      ],
+    },
+    post_build: {
+      commands: [
+        'chmod +x ./scripts/push-image.sh',
+        './scripts/push-image.sh',
+        'repositoryUri=$(aws ecr describe-repositories --repository-names ai-chatbot-app --region $AWS_DEFAULT_REGION --query "repositories[0].repositoryUri" --output text) && echo "[{\\"name\\":\\"web\\",\\"imageUri\\":\\"${repositoryUri}:latest\\"}]" > imagedefinitions.json',
+      ],
+    },
   }
 });
 
@@ -69,14 +82,14 @@ export class PipelineStack extends cdk.Stack {
           build: {
             commands: [
               'npm run build',
-              'cd infrastructure && npm install',
+              'npm install --prefix infrastructure',
               'cdk deploy AIChatbotAppStack --require-approval never',
             ],
           },
           post_build: {
             commands: [
-              'chmod +x ../scripts/push-image.sh',
-              '../scripts/push-image.sh',
+              'chmod +x ./scripts/push-image.sh',
+              './scripts/push-image.sh',
               'repositoryUri=$(aws ecr describe-repositories --repository-names ai-chatbot-app --region $AWS_DEFAULT_REGION --query "repositories[0].repositoryUri" --output text) && echo "[{\\"name\\":\\"web\\",\\"imageUri\\":\\"${repositoryUri}:latest\\"}]" > imagedefinitions.json',
             ],
           },
