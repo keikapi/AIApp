@@ -35,6 +35,7 @@ const appStack = new AppStack(app, 'AIChatbotAppStack', {
 const pipelineStack = new PipelineStack(app, 'AIChatbotPipelineStack', {
   env,
   appStack,
+  service: appStack.service.service,
 });
 
 // スタック間の依存関係を設定

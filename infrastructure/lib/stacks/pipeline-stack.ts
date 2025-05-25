@@ -3,10 +3,13 @@ import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as ecs_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import { Construct } from 'constructs';
 
 interface PipelineStackProps extends cdk.StackProps {
   appStack: cdk.Stack;
+  service: ecs.FargateService;
 }
 // AWS SDKのバージョンを固定するためのpackage.jsonの依存関係を定義
 const packageJson = {
@@ -73,6 +76,7 @@ export class PipelineStack extends cdk.Stack {
           post_build: {
             commands: [
               'cd ..',
+              'chmod +x ./scripts/push-image.sh',
               './scripts/push-image.sh',
             ],
           },
@@ -148,6 +152,16 @@ export class PipelineStack extends cdk.Stack {
     pipeline.addStage({
       stageName: 'BuildAndDeploy',
       actions: [buildAction],
+    });
+
+    const deployAction = new ecs_actions.EcsDeployAction({
+      actionName: 'DeployToECS',
+      service: props.service,
+      input: buildOutput,
+    });
+    pipeline.addStage({
+      stageName: 'Deploy',
+      actions: [deployAction],
     });
   }
 } 

@@ -175,4 +175,48 @@ TypeScriptで実装されたバックエンドアプリケーション。
      3. CDKスタックのデプロイ（CodeBuild）
      4. Dockerイメージのビルドとプッシュ（CodeBuild）
 
-詳細なデプロイメント手順は `docs/deployment/deployment-guide.md` を参照してください。 
+詳細なデプロイメント手順は `docs/deployment/deployment-guide.md` を参照してください。
+
+## 各CDKスタックの役割まとめ
+
+このプロジェクトでは、AWS CDKを用いて複数のスタック（CloudFormationスタック）を管理しています。それぞれの役割は以下の通りです。
+
+### 1. AIChatbotBaseStack
+- **役割**: VPC（仮想ネットワーク）、サブネット、セキュリティグループなど、全体の基盤となるネットワークリソースを作成します。
+- **主なリソース**: VPC、サブネット、インターネットゲートウェイ、セキュリティグループ
+
+### 2. AIChatbotStorageStack
+- **役割**: チャットボットのデータ保存用のストレージリソースを作成します。
+- **主なリソース**: S3バケット（ドキュメント保存）、DynamoDBテーブル（ユーザー設定・チャット履歴）
+
+### 3. AIChatbotAuthStack
+- **役割**: ユーザー認証・認可のためのリソースを作成します。
+- **主なリソース**: Cognito User Pool、User Pool Client
+
+### 4. AIChatbotAiSearchStack
+- **役割**: AI検索（ドキュメント検索）機能のためのリソースを作成します。
+- **主なリソース**: OpenSearch Serverlessコレクション、Lambda関数（ドキュメントインデックス処理）
+
+### 5. AIChatbotAppStack
+- **役割**: アプリケーション本体（APIサーバーやWebアプリ）をECS上で動かすためのリソースを作成します。
+- **主なリソース**: ECRリポジトリ、ECSクラスター・サービス（Fargate）、ALB、IAMロール、環境変数設定
+
+### 6. AIChatbotPipelineStack
+- **役割**: アプリケーションの運用・保守を自動化するためのCI/CDパイプライン（CodePipeline）を作成します。
+  - **アプリケーション基盤そのものではなく、運用・保守（デプロイ自動化・継続的デリバリー）用のスタックです。**
+- **主なリソース**: CodePipeline（パイプライン本体）、CodeBuild（ビルド・デプロイ）、GitHub連携設定、ECRプッシュ権限
+
+---
+
+### 全体像まとめ
+
+- **AIChatbotBaseStack〜AIChatbotAppStack**：アプリケーションの実行基盤・本体を構成
+- **AIChatbotPipelineStack**：アプリケーションの運用・保守（CI/CD自動化）を担う
+
+---
+
+> 例：GitHubのmainブランチにpushすると、AIChatbotPipelineStackのCodePipelineが自動でビルド・デプロイを実行し、ECS上のアプリが最新化されます。
+
+---
+
+（この説明はプロジェクトの全体像やアーキテクチャ理解の参考としてご活用ください） 
