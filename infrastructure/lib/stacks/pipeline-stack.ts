@@ -38,15 +38,16 @@ const buildSpec = codebuild.BuildSpec.fromObject({
     build: {
       commands: [
         'npm run build',
-        'npm install --prefix infrastructure',
-        'cdk deploy AIChatbotAppStack --require-approval never',
+        'cd infrastructure && npm install',
+        'cd infrastructure && cdk deploy AIChatbotAppStack --require-approval never',
+        'cd ..',
       ],
     },
     post_build: {
       commands: [
         'chmod +x ./scripts/push-image.sh',
         './scripts/push-image.sh',
-        'repositoryUri=$(aws ecr describe-repositories --repository-names ai-chatbot-app --region $AWS_DEFAULT_REGION --query "repositories[0].repositoryUri" --output text) && echo "[{\\"name\\":\\"web\\",\\"imageUri\\":\\"${repositoryUri}:latest\\"}]" > imagedefinitions.json',
+        'repositoryUri=$(aws ecr describe-repositories --repository-names ai-chatbot-app --region $AWS_DEFAULT_REGION --query "repositories[0].repositoryUri" --output text) && echo "[{\"name\":\"web\",\"imageUri\":\"${repositoryUri}:latest\"}]" > imagedefinitions.json',
       ],
     },
   }
@@ -82,15 +83,16 @@ export class PipelineStack extends cdk.Stack {
           build: {
             commands: [
               'npm run build',
-              'npm install --prefix infrastructure',
+              'cd infrastructure && npm install',
               'cdk deploy AIChatbotAppStack --require-approval never',
+              'cd ..',
             ],
           },
           post_build: {
             commands: [
               'chmod +x ./scripts/push-image.sh',
               './scripts/push-image.sh',
-              'repositoryUri=$(aws ecr describe-repositories --repository-names ai-chatbot-app --region $AWS_DEFAULT_REGION --query "repositories[0].repositoryUri" --output text) && echo "[{\\"name\\":\\"web\\",\\"imageUri\\":\\"${repositoryUri}:latest\\"}]" > imagedefinitions.json',
+              'repositoryUri=$(aws ecr describe-repositories --repository-names ai-chatbot-app --region $AWS_DEFAULT_REGION --query "repositories[0].repositoryUri" --output text) && echo "[{\"name\":\"web\",\"imageUri\":\"${repositoryUri}:latest\"}]" > imagedefinitions.json',
             ],
           },
         },
