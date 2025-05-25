@@ -75,14 +75,17 @@ export class PipelineStack extends cdk.Stack {
           },
           post_build: {
             commands: [
-              'cd ..',
               'chmod +x ./scripts/push-image.sh',
               './scripts/push-image.sh',
+              'repositoryUri=$(aws ecr describe-repositories --repository-names ai-chatbot-app --region $AWS_DEFAULT_REGION --query "repositories[0].repositoryUri" --output text) && echo "[{\\"name\\":\\"web\\",\\"imageUri\\":\\"${repositoryUri}:latest\\"}]" > imagedefinitions.json',
             ],
           },
         },
         artifacts: {
-          files: ['**/*'],
+          files: [
+            '**/*',
+            'imagedefinitions.json'
+          ]
         },
       }),
     });
